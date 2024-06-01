@@ -14,6 +14,7 @@ import {
   Icon,
   useColorModeValue,
   Skeleton,
+  Spinner,
 } from '@chakra-ui/react';
 import { compileOutputs } from '../../../api/util';
 import TimeAgo from 'javascript-time-ago';
@@ -28,6 +29,7 @@ import { NETWORK_ID } from '../../../config/config';
 import { useStoreState } from 'easy-peasy';
 import {
   FaCoins,
+  FaCheckCircle,
   FaPiggyBank,
   FaTrashAlt,
   FaRegEdit,
@@ -35,6 +37,7 @@ import {
   FaUsers,
   FaRegFileCode,
   IoRemoveCircleSharp,
+  IoWarning,
   TiArrowForward,
   TiArrowBack,
   TiArrowShuffle,
@@ -91,6 +94,8 @@ const Transaction = ({
   addresses,
   network,
   onLoad,
+  mithrilVerified,
+  isMithrilLoading,
 }) => {
   const settings = useStoreState((state) => state.settings.settings);
   const isMounted = useIsMounted();
@@ -142,6 +147,7 @@ const Transaction = ({
             borderRadius={10}
             borderLeftRadius={30}
             p={0}
+            position={'relative'}
             _hover={{ backgroundColor: colorMode.txBgHover }}
             _focus={{ border: 'none' }}
           >
@@ -155,6 +161,54 @@ const Transaction = ({
               left="-15px"
             >
               <TxIcon txType={displayInfo.type} extra={displayInfo.extra} />
+            </Box>
+            <Box
+              display="flex"
+              flexDirection="column"
+              textAlign="center"
+              position="absolute"
+              zIndex={100}
+              right="20px"
+              top="24px"
+            >
+              <div
+                className="verification-badge"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px 6px',
+                  background: '#ffffff',
+                  borderRadius: '8px',
+                }}
+              >
+                {!isMithrilLoading ? (
+                  <>
+                    <Icon
+                      as={mithrilVerified ? FaCheckCircle : IoWarning}
+                      w={4}
+                      h={4}
+                      color={mithrilVerified ? 'green.500' : 'red.500'}
+                      marginRight={1}
+                    />
+                    <Text fontSize={10} fontWeight="semibold" color="green.500">
+                      {mithrilVerified ? 'Verified' : 'Untrusted'}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Spinner
+                      color="teal"
+                      speed="0.5s"
+                      boxSize="12px"
+                      size="xs"
+                      marginRight={1}
+                    />
+                    <Text fontSize={10} fontWeight="semibold" color="green.500">
+                      Verifying
+                    </Text>
+                  </>
+                )}
+              </div>
             </Box>
             <Box
               display="flex"

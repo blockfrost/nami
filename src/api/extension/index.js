@@ -144,6 +144,14 @@ export const getDelegation = async () => {
   };
 };
 
+export const getTxCBOR = async (txHash) => {
+  // TODO: Get real CBOR
+  // const result = await blockfrostRequest(`/txs/${txHash}/cbor`);
+  // if (!result || result.error) return null;
+  // return result;
+  return '84a40081825820203e5b61e0949ffc8fe594727cf7ed73c7396cc2bd212af9a680c9423b5880eb00018282583900f0c60254ecb0addd4c7e40c28fd05b65014ab4c8ecece06c7dcee5a0724bf93336a8225e7ef152b41aea955173be91af19250edea1ddafab1a000f42408258390014beadb876d0a2a593fe2f1b539389e00731290910170e9a1be78e847d2ccdc7af469706878018739bcfde9ae23f009c4ae38aee0a4b4f3a1b0000000253fa0f93021a0002922d031a0303c827a100818258207d3ae39f9a1c916ac7c13f10c7d67c70b870c286a1af71485455c5022a3f391d5840e2f481acd1601a3f39fa976317bba685ddd774621a92611edaaa3df9f48a3b13d8b25ecb2f28b031c1602512418efed3033e463a0dcd22a856c808033cc9e00ff5f6';
+};
+
 export const getPoolMetadata = async (poolId) => {
   if (!poolId) {
     throw new Error('poolId argument not provided');
@@ -1558,12 +1566,12 @@ export const getAdaHandle = async (assetName) => {
     const network = await getNetwork();
     if (!network) return null;
     let handleUrl;
-    switch (network.id){
+    switch (network.id) {
       case 'mainnet':
-        handleUrl = 'https://api.handle.me'
+        handleUrl = 'https://api.handle.me';
         break;
       case 'preprod':
-        handleUrl = 'https://preprod.api.handle.me'
+        handleUrl = 'https://preprod.api.handle.me';
         break;
       default:
         return null;
@@ -1769,7 +1777,9 @@ export const getAsset = async (unit) => {
         const metadata = metadataDatum && Data.toJson(metadataDatum.fields[0]);
 
         asset.displayName = metadata.name;
-        asset.image = metadata.image ? linkToSrc(convertMetadataPropToString(metadata.image)) : '';
+        asset.image = metadata.image
+          ? linkToSrc(convertMetadataPropToString(metadata.image))
+          : '';
         asset.decimals = 0;
       } catch (_e) {
         asset.displayName = asset.name;
@@ -1796,7 +1806,8 @@ export const getAsset = async (unit) => {
         const metadata = metadataDatum && Data.toJson(metadataDatum.fields[0]);
 
         asset.displayName = metadata.name;
-        asset.image = linkToSrc(convertMetadataPropToString(metadata.logo)) || '';
+        asset.image =
+          linkToSrc(convertMetadataPropToString(metadata.logo)) || '';
         asset.decimals = metadata.decimals || 0;
       } catch (_e) {
         asset.displayName = asset.name;

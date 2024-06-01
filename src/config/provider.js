@@ -23,5 +23,17 @@ export default {
       )
         .then((res) => res.json())
         .then((res) => res.cardano[currency]),
+    mithril: (network) => {
+      const mithrilBaseURL = new URL('http://localhost:3000');
+      // TODO: Mithril-client does not support URL with credentials,
+      // nor there is any possibility to inject project_id header
+      // const mithrilBaseURL = new URL(provider.api.base(network.node));
+      // mithrilBaseURL.username = 'mithril';
+      // mithrilBaseURL.password = networkToProjectId[network.name];
+      mithrilBaseURL.pathname = mithrilBaseURL.pathname + 'mithril';
+
+      console.log('mithrilBaseURL.href', mithrilBaseURL.href);
+      return mithrilBaseURL.href;
+    },
   },
 };
