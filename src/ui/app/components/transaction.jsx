@@ -15,6 +15,7 @@ import {
   useColorModeValue,
   Skeleton,
   Spinner,
+  Tooltip,
 } from '@chakra-ui/react';
 import { compileOutputs } from '../../../api/util';
 import TimeAgo from 'javascript-time-ago';
@@ -190,9 +191,39 @@ const Transaction = ({
                       color={mithrilVerified ? 'green.500' : 'red.500'}
                       marginRight={1}
                     />
-                    <Text fontSize={10} fontWeight="semibold" color="green.500">
-                      {mithrilVerified ? 'Verified' : 'Untrusted'}
-                    </Text>
+                    {mithrilVerified ? (
+                      <Text
+                        fontSize={10}
+                        fontWeight="semibold"
+                        color="green.500"
+                      >
+                        Verified
+                      </Text>
+                    ) : (
+                      <Tooltip
+                        label={
+                          <Box display="flex" flexDirection="column">
+                            <Text ml="1">
+                              This transaction could not be verified on the
+                              blockchain. It may be fraudulent, and the data
+                              source could be compromised. For your safety,
+                              please review this transaction carefully.
+                            </Text>
+                          </Box>
+                        }
+                        fontSize="sm"
+                        hasArrow
+                        placement="auto"
+                      >
+                        <Text
+                          fontSize={10}
+                          fontWeight="semibold"
+                          color="red.500"
+                        >
+                          Untrusted
+                        </Text>
+                      </Tooltip>
+                    )}
                   </>
                 ) : (
                   <>
