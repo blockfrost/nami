@@ -19,14 +19,7 @@ import initMithrilClient, {
 import provider from '../../../config/provider';
 import { output } from '../../../../webpack.config';
 
-// let aggregator_endpoint =
-//   'http://mithril:mainnetjTvHPJCsB63oTESdYcua2ZhKTECveeIG@localhost:4000/backend/mithril';
-
 const network = getNetwork();
-let aggregator_endpoint = provider.api.mithril(network);
-
-let genesis_verification_key =
-  '5b3132372c37332c3132342c3136312c362c3133372c3133312c3231332c3230372c3131372c3139382c38352c3137362c3139392c3136322c3234312c36382c3132332c3131392c3134352c31332c3233322c3234332c34392c3232392c322c3234392c3230352c3230352c33392c3233352c34345d';
 
 // const broadcast_channel = new BroadcastChannel('mithril-client');
 // broadcast_channel.onmessage = (e) => {
@@ -45,7 +38,14 @@ let genesis_verification_key =
 //   }
 // };
 
-const getTxsCerts = async (txHashes) => {
+const runMithrilVerification = async (txHashes) => {
+  const genesis_verification_key =
+    '5b3132372c37332c3132342c3136312c362c3133372c3133312c3231332c3230372c3131372c3139382c38352c3137362c3139392c3136322c3234312c36382c3132332c3131392c3134352c31332c3233322c3234332c34392c3232392c322c3234392c3230352c3230352c33392c3233352c34345d';
+
+  // let aggregator_endpoint =
+  //   'http://mithril:mainnetjTvHPJCsB63oTESdYcua2ZhKTECveeIG@localhost:4000/backend/mithril';
+  const aggregator_endpoint = provider.api.mithril(network);
+
   await initMithrilClient();
 
   let client = await new MithrilClient(
@@ -53,9 +53,7 @@ const getTxsCerts = async (txHashes) => {
     genesis_verification_key
   );
   const proof = await client.unstable.get_cardano_transaction_proofs(txHashes);
-
   console.log('Proof', proof);
-  console.log('Proof.transactions_hashes', proof.transactions_hashes);
 
   let proof_certificate = await client.verify_certificate_chain(
     proof.certificate_hash
@@ -64,7 +62,6 @@ const getTxsCerts = async (txHashes) => {
     'verify_certificate_chain OK, last_certificate_from_chain:',
     proof_certificate
   );
-
   let valid_cardano_transaction_proof =
     await client.unstable.verify_cardano_transaction_proof_then_compute_message(
       proof,
@@ -120,9 +117,14 @@ const verifyCBORData = async (txHashes, history) => {
     if (!txData) {
       continue;
     }
+    if (!txData.utxos) {
+      console.log(`Missing UTXOs for tx ${txHash}`);
+      continue;
+    }
 
-    // Note: Computing tx hash using old CML that is included in Nami is flawed.
+    // Note: There is a change that computing tx hash using old CML that is included in Nami is flawed.
     // The computed tx hash may be different than the original despite the transaction being the same
+    // due to tx being reconstructed with non-canonical CBOR.
     // CSL provides a way to safely compute original tx hash:
     // https://github.com/Emurgo/cardano-serialization-lib/issues/604
     // const tx = Cardano.FixedTransaction.from_hex(txCBOR);
@@ -143,6 +145,15 @@ const verifyCBORData = async (txHashes, history) => {
     }
 
     const { inputs, outputs } = txData.utxos;
+
+    if (txBody.inputs().len() !== inputs.length) {
+      console.log(
+        `CBOR verification failed for tx ${txHash}. Inputs length mismatch (CBOR: ${txBody
+          .inputs()
+          .len()}, JSON: ${inputs.length})`
+      );
+      continue;
+    }
 
     if (txBody.outputs().len() !== outputs.length) {
       console.log(
@@ -182,8 +193,8 @@ const verifyCBORData = async (txHashes, history) => {
     for (let i = 0; i < outputs.length; i++) {
       const cborOutput = txBody.outputs().get(i);
       const jsonOutput = outputs[i];
-      // lovelace amount
 
+      // lovelace amount
       const jsonLovelaceAMount = jsonOutput.amount.find(
         (a) => a.unit === 'lovelace'
       )?.quantity;
@@ -204,14 +215,14 @@ const verifyCBORData = async (txHashes, history) => {
 
       // compare assets
       const cborAssets = multiAssetToArray(cborOutput.amount().multiasset());
-      for (const asset of cborAssets) {
-        const receivedAmount = jsonOutput.amount.find(
-          (unit) => unit === asset.unit
-        ).amount;
-        const amountMatch = receivedAmount === asset.quantity;
+      for (const cborAsset of cborAssets) {
+        const jsonAssetQuantity = jsonOutput.amount.find(
+          (a) => a.unit === cborAsset.unit
+        ).quantity;
+        const amountMatch = jsonAssetQuantity === cborAsset.quantity;
         if (!amountMatch) {
           console.log(
-            `amount of ${asset.unit} does not match. Received: ${receivedAmount}. Expected: ${asset.quantity}`
+            `amount of ${cborAsset.unit} does not match. Received: ${jsonAssetQuantity}. Expected: ${cborAsset.quantity}`
           );
         }
       }
@@ -267,7 +278,7 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
     if (slice.length < page * BATCH) setFinal(true);
 
     setHistorySlice(slice);
-    await runMithrilValidation(slice);
+    await runTxVerification(slice);
   };
 
   React.useEffect(() => {
@@ -293,17 +304,16 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
     if (historySlice.length >= (page - 1) * BATCH) setLoadNext(false);
   }, [historySlice]);
 
-  const runMithrilValidation = async (txHashes) => {
+  const runTxVerification = async (txHashes) => {
     setIsMithrilLoading(true);
-    // Verify that tx hashes matches CBOR data
+    // Verify that tx JSON data matches CBOR data
     const cborVerification = await verifyCBORData(txHashes, history);
-    // Get Mithril proofs
-    const proof = await getTxsCerts(txHashes);
+    // Run mithril verification
+    const proof = await runMithrilVerification(txHashes);
     setVerificationData({ mithril: proof, cbor: cborVerification });
     setIsMithrilLoading(false);
   };
 
-  console.log('verificationData', verificationData);
   return (
     <Box position="relative">
       {!(history && historySlice) ? (
