@@ -52,6 +52,12 @@ const runMithrilVerification = async (txHashes) => {
     aggregator_endpoint,
     genesis_verification_key
   );
+
+  // const myHeaders = new Headers();
+  // myHeaders.append('project_id', 'test');
+
+  // client.set_additional_headers(myHeaders);
+
   const proof = await client.unstable.get_cardano_transaction_proofs(txHashes);
   console.log('Proof', proof);
 
