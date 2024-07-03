@@ -145,18 +145,17 @@ export const getDelegation = async () => {
 };
 
 export const getTxCBOR = async (txHash) => {
-  // TODO: Get real CBOR
-  // const result = await blockfrostRequest(`/txs/${txHash}/cbor`);
-  // if (!result || result.error) return null;
-  // return result;
+  const result = await blockfrostRequest(`/txs/${txHash}/cbor`);
+  if (!result || result.error) return null;
+  return result.cbor;
 
-  if (
-    txHash ===
-    '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
-  ) {
-    return '84a4008282582040f5ce4bc6dad1390c0c56b847f860b1fc27c45f1a531e63d16b0a498c21212200825820eadcfeb38de327a0def9ab03f11ca37ca050c7318e96c9bfcc7c51406a584eec01018282583900f0c60254ecb0addd4c7e40c28fd05b65014ab4c8ecece06c7dcee5a0724bf93336a8225e7ef152b41aea955173be91af19250edea1ddafab821a001226b8a1581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a15046696e616e636542696e617269657334028258390009fe15e51f5109d5ace334448318d378e8ddf69a45c61b1347a200ed7d2ccdc7af469706878018739bcfde9ae23f009c4ae38aee0a4b4f3a821b0000000253f75452a1581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a15046696e616e636542696e61726965733408021a0002bb41031a0308319aa1008282582015a834ae1b84aecb354d7b56dd9c2153d947328b0f2ae722a7e61b581b25598458404a29dfdcd159e16232f16df270fb25a3584f303dfcc798206069da32345d4f95f588577bb6928aadcb40af77c4198b6572755bca3c673f4debe2ad354bdea50c8258203fefb4a308e15d716883dea41d5f7fb508cbee5557ea585e7b3351c931b72eb6584057bff5ba29a71db4645da8129f279706a45d556b086445687fd11a19e700ea02c5997af1bbd51eba416151097220142763c6f8a7606f8791fb63ce8324ee3308f5f6';
-  }
-  return '84a400818258206dd6cf3fa81222062093885417b5f872f4d5d5ebfcea60de2ba6dc32edf20f0101018382583900f0c60254ecb0addd4c7e40c28fd05b65014ab4c8ecece06c7dcee5a0724bf93336a8225e7ef152b41aea955173be91af19250edea1ddafab821a001226b8a1581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a15046696e616e636542696e6172696573340a82583900f0c60254ecb0addd4c7e40c28fd05b65014ab4c8ecece06c7dcee5a0724bf93336a8225e7ef152b41aea955173be91af19250edea1ddafab1a001e848082583900e60861fc19a8cb2b9c04b9f9d35b093d7733120851c1e0487386386412671c592938844c1400d65d134135e35b4f29cdc79aa1404a0e1112821a05e8dba6a8581c0d55169aefdbff511ea14a966c0519e0d964c073143201583099cddba14848656c6c6f4e465401581c1f39bdd2257939e0e14d76f7afff2a5bf1ead57224fd10f94c37ae9ea14848656c6c6f4e465401581c3bbd184d7b858623b77f8b203d2af8aff629a7ce72143a9d993e8ee9a14848656c6c6f4e465401581c599d7575d0c0756998c027c5c72461ede01088ca2e919d2b54cfb9afa14848656c6c6f4e465401581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a95046696e616e636542696e6172696573301a000f42405046696e616e636542696e6172696573321a000f42405046696e616e636542696e6172696573331a000f42405046696e616e636542696e6172696573341a000f42365046696e616e636542696e6172696573351a000f42405046696e616e636542696e6172696573361a000f42405046696e616e636542696e6172696573371a000f42405046696e616e636542696e6172696573381a000f423f5046696e616e636542696e6172696573391a000f4240581c8413eb5387d7cc27d87122c8f6420d95c5773e7cd9fb41c64d99b7dea14848656c6c6f4e465401581c87f310392793674823e9eea90fed63fec31dc2247ab58640b58bb95ea14848656c6c6f4e465401581c8e9d119fcf988b818e1d74361244eb44c886323fc92ed4fea9d46b94a14848656c6c6f4e465401021a0002fe75031a03082880a10081825820106b5fad29bdfe9d6cd55292292bbde7f4fff45adb9473bb186510f54594a80b5840c49f180ef7ab31bc0bbbbdb576c2ba023995782e5e1dce766a5de78fa922dcfbbdf1a0afe9f0b4e76e15fb193ddae3705a2d8910564b967d11719a752bce4d0bf5f6';
+  // if (
+  //   txHash ===
+  //   '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
+  // ) {
+  //   return '84a4008282582040f5ce4bc6dad1390c0c56b847f860b1fc27c45f1a531e63d16b0a498c21212200825820eadcfeb38de327a0def9ab03f11ca37ca050c7318e96c9bfcc7c51406a584eec01018282583900f0c60254ecb0addd4c7e40c28fd05b65014ab4c8ecece06c7dcee5a0724bf93336a8225e7ef152b41aea955173be91af19250edea1ddafab821a001226b8a1581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a15046696e616e636542696e617269657334028258390009fe15e51f5109d5ace334448318d378e8ddf69a45c61b1347a200ed7d2ccdc7af469706878018739bcfde9ae23f009c4ae38aee0a4b4f3a821b0000000253f75452a1581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a15046696e616e636542696e61726965733408021a0002bb41031a0308319aa1008282582015a834ae1b84aecb354d7b56dd9c2153d947328b0f2ae722a7e61b581b25598458404a29dfdcd159e16232f16df270fb25a3584f303dfcc798206069da32345d4f95f588577bb6928aadcb40af77c4198b6572755bca3c673f4debe2ad354bdea50c8258203fefb4a308e15d716883dea41d5f7fb508cbee5557ea585e7b3351c931b72eb6584057bff5ba29a71db4645da8129f279706a45d556b086445687fd11a19e700ea02c5997af1bbd51eba416151097220142763c6f8a7606f8791fb63ce8324ee3308f5f6';
+  // }
+  // return '84a400818258206dd6cf3fa81222062093885417b5f872f4d5d5ebfcea60de2ba6dc32edf20f0101018382583900f0c60254ecb0addd4c7e40c28fd05b65014ab4c8ecece06c7dcee5a0724bf93336a8225e7ef152b41aea955173be91af19250edea1ddafab821a001226b8a1581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a15046696e616e636542696e6172696573340a82583900f0c60254ecb0addd4c7e40c28fd05b65014ab4c8ecece06c7dcee5a0724bf93336a8225e7ef152b41aea955173be91af19250edea1ddafab1a001e848082583900e60861fc19a8cb2b9c04b9f9d35b093d7733120851c1e0487386386412671c592938844c1400d65d134135e35b4f29cdc79aa1404a0e1112821a05e8dba6a8581c0d55169aefdbff511ea14a966c0519e0d964c073143201583099cddba14848656c6c6f4e465401581c1f39bdd2257939e0e14d76f7afff2a5bf1ead57224fd10f94c37ae9ea14848656c6c6f4e465401581c3bbd184d7b858623b77f8b203d2af8aff629a7ce72143a9d993e8ee9a14848656c6c6f4e465401581c599d7575d0c0756998c027c5c72461ede01088ca2e919d2b54cfb9afa14848656c6c6f4e465401581c61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d935a95046696e616e636542696e6172696573301a000f42405046696e616e636542696e6172696573321a000f42405046696e616e636542696e6172696573331a000f42405046696e616e636542696e6172696573341a000f42365046696e616e636542696e6172696573351a000f42405046696e616e636542696e6172696573361a000f42405046696e616e636542696e6172696573371a000f42405046696e616e636542696e6172696573381a000f423f5046696e616e636542696e6172696573391a000f4240581c8413eb5387d7cc27d87122c8f6420d95c5773e7cd9fb41c64d99b7dea14848656c6c6f4e465401581c87f310392793674823e9eea90fed63fec31dc2247ab58640b58bb95ea14848656c6c6f4e465401581c8e9d119fcf988b818e1d74361244eb44c886323fc92ed4fea9d46b94a14848656c6c6f4e465401021a0002fe75031a03082880a10081825820106b5fad29bdfe9d6cd55292292bbde7f4fff45adb9473bb186510f54594a80b5840c49f180ef7ab31bc0bbbbdb576c2ba023995782e5e1dce766a5de78fa922dcfbbdf1a0afe9f0b4e76e15fb193ddae3705a2d8910564b967d11719a752bce4d0bf5f6';
 };
 
 export const getPoolMetadata = async (poolId) => {
@@ -245,48 +244,48 @@ export const getTransactions = async (paginate = 1, count = 10) => {
 };
 
 export const getTxInfo = async (txHash) => {
-  const fakeTx = {
-    hash: '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd',
-    block: '356b7d7dbb696ccd12775c016941057a9dc70898d87a63fc752271bb46856940',
-    block_height: 2152118,
-    block_time: 1635505891,
-    slot: 42000000,
-    index: 1,
-    output_amount: [
-      {
-        unit: 'lovelace',
-        quantity: '1189560',
-      },
-      {
-        unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
-        quantity: '10',
-      },
-    ],
-    fees: '196213',
-    deposit: '0',
-    size: 433,
-    invalid_before: null,
-    invalid_hereafter: '13885913',
-    utxo_count: 4,
-    withdrawal_count: 0,
-    mir_cert_count: 0,
-    delegation_count: 0,
-    stake_cert_count: 0,
-    pool_update_count: 0,
-    pool_retire_count: 0,
-    asset_mint_or_burn_count: 0,
-    redeemer_count: 0,
-    valid_contract: true,
-  };
+  // const fakeTx = {
+  //   hash: '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd',
+  //   block: '356b7d7dbb696ccd12775c016941057a9dc70898d87a63fc752271bb46856940',
+  //   block_height: 2152118,
+  //   block_time: 1635505891,
+  //   slot: 42000000,
+  //   index: 1,
+  //   output_amount: [
+  //     {
+  //       unit: 'lovelace',
+  //       quantity: '1189560',
+  //     },
+  //     {
+  //       unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
+  //       quantity: '10',
+  //     },
+  //   ],
+  //   fees: '196213',
+  //   deposit: '0',
+  //   size: 433,
+  //   invalid_before: null,
+  //   invalid_hereafter: '13885913',
+  //   utxo_count: 4,
+  //   withdrawal_count: 0,
+  //   mir_cert_count: 0,
+  //   delegation_count: 0,
+  //   stake_cert_count: 0,
+  //   pool_update_count: 0,
+  //   pool_retire_count: 0,
+  //   asset_mint_or_burn_count: 0,
+  //   redeemer_count: 0,
+  //   valid_contract: true,
+  // };
 
-  if (
-    txHash ===
-    '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
-  ) {
-    return new Promise((resolve) => {
-      resolve(fakeTx);
-    });
-  }
+  // if (
+  //   txHash ===
+  //   '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
+  // ) {
+  //   return new Promise((resolve) => {
+  //     resolve(fakeTx);
+  //   });
+  // }
 
   const result = await blockfrostRequest(`/txs/${txHash}`);
   if (!result || result.error) return null;
@@ -300,100 +299,100 @@ export const getBlock = async (blockHashOrNumb) => {
 };
 
 export const getTxUTxOs = async (txHash) => {
-  const fakeTx = {
-    hash: '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd',
-    inputs: [
-      {
-        address:
-          'addr_test1qp4sxuprra7029sldt9feq00l4kveqa6yzusxma722ht33ta9nxu0t6xjurg0qqcwwdulh56uglsp8z2uw9wuzjtfuaqfrchp5',
-        amount: [
-          {
-            unit: 'lovelace',
-            quantity: '9999842058',
-          },
-          {
-            unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
-            quantity: '10',
-          },
-        ],
-        tx_hash:
-          '40f5ce4bc6dad1390c0c56b847f860b1fc27c45f1a531e63d16b0a498c212122',
-        output_index: 0,
-        data_hash: null,
-        inline_datum: null,
-        reference_script_hash: null,
-        collateral: false,
-        reference: false,
-      },
-      {
-        address:
-          'addr_test1qq2tatdcwmg29fvnlch3k5un38sqwvffpygpwr56r0ncapra9nxu0t6xjurg0qqcwwdulh56uglsp8z2uw9wuzjtfuaq3vredr',
-        amount: [
-          {
-            unit: 'lovelace',
-            quantity: '9998831507',
-          },
-        ],
-        tx_hash:
-          'eadcfeb38de327a0def9ab03f11ca37ca050c7318e96c9bfcc7c51406a584eec',
-        output_index: 1,
-        data_hash: null,
-        inline_datum: null,
-        reference_script_hash: null,
-        collateral: false,
-        reference: false,
-      },
-    ],
-    outputs: [
-      {
-        address:
-          'addr_test1qrcvvqj5ajc2mh2v0eqv9r7stdjszj45erkwecrv0h8wtgrjf0unxd4gyf08au2jksdw4923wwlfrtcey58dagwa474sn0jfs8',
-        amount: [
-          {
-            unit: 'lovelace',
-            quantity: '1189560',
-          },
-          {
-            unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
-            quantity: '2',
-          },
-        ],
-        output_index: 0,
-        data_hash: null,
-        inline_datum: null,
-        collateral: false,
-        reference_script_hash: null,
-      },
-      {
-        address:
-          'addr_test1qqylu909ragsn4dvuv6yfqcc6duw3h0knfzuvxcng73qpmta9nxu0t6xjurg0qqcwwdulh56uglsp8z2uw9wuzjtfuaqdgqmcp',
-        amount: [
-          {
-            unit: 'lovelace',
-            quantity: '9998652498',
-          },
-          {
-            unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
-            quantity: '8',
-          },
-        ],
-        output_index: 1,
-        data_hash: null,
-        inline_datum: null,
-        collateral: false,
-        reference_script_hash: null,
-      },
-    ],
-  };
+  // const fakeTx = {
+  //   hash: '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd',
+  //   inputs: [
+  //     {
+  //       address:
+  //         'addr_test1qp4sxuprra7029sldt9feq00l4kveqa6yzusxma722ht33ta9nxu0t6xjurg0qqcwwdulh56uglsp8z2uw9wuzjtfuaqfrchp5',
+  //       amount: [
+  //         {
+  //           unit: 'lovelace',
+  //           quantity: '9999842058',
+  //         },
+  //         {
+  //           unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
+  //           quantity: '10',
+  //         },
+  //       ],
+  //       tx_hash:
+  //         '40f5ce4bc6dad1390c0c56b847f860b1fc27c45f1a531e63d16b0a498c212122',
+  //       output_index: 0,
+  //       data_hash: null,
+  //       inline_datum: null,
+  //       reference_script_hash: null,
+  //       collateral: false,
+  //       reference: false,
+  //     },
+  //     {
+  //       address:
+  //         'addr_test1qq2tatdcwmg29fvnlch3k5un38sqwvffpygpwr56r0ncapra9nxu0t6xjurg0qqcwwdulh56uglsp8z2uw9wuzjtfuaq3vredr',
+  //       amount: [
+  //         {
+  //           unit: 'lovelace',
+  //           quantity: '9998831507',
+  //         },
+  //       ],
+  //       tx_hash:
+  //         'eadcfeb38de327a0def9ab03f11ca37ca050c7318e96c9bfcc7c51406a584eec',
+  //       output_index: 1,
+  //       data_hash: null,
+  //       inline_datum: null,
+  //       reference_script_hash: null,
+  //       collateral: false,
+  //       reference: false,
+  //     },
+  //   ],
+  //   outputs: [
+  //     {
+  //       address:
+  //         'addr_test1qrcvvqj5ajc2mh2v0eqv9r7stdjszj45erkwecrv0h8wtgrjf0unxd4gyf08au2jksdw4923wwlfrtcey58dagwa474sn0jfs8',
+  //       amount: [
+  //         {
+  //           unit: 'lovelace',
+  //           quantity: '1189560',
+  //         },
+  //         {
+  //           unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
+  //           quantity: '2',
+  //         },
+  //       ],
+  //       output_index: 0,
+  //       data_hash: null,
+  //       inline_datum: null,
+  //       collateral: false,
+  //       reference_script_hash: null,
+  //     },
+  //     {
+  //       address:
+  //         'addr_test1qqylu909ragsn4dvuv6yfqcc6duw3h0knfzuvxcng73qpmta9nxu0t6xjurg0qqcwwdulh56uglsp8z2uw9wuzjtfuaqdgqmcp',
+  //       amount: [
+  //         {
+  //           unit: 'lovelace',
+  //           quantity: '9998652498',
+  //         },
+  //         {
+  //           unit: '61d87fff4c6150cb4e416c4bc9a0f497f6a50916a47e1b8b5aa7d93546696e616e636542696e617269657334',
+  //           quantity: '8',
+  //         },
+  //       ],
+  //       output_index: 1,
+  //       data_hash: null,
+  //       inline_datum: null,
+  //       collateral: false,
+  //       reference_script_hash: null,
+  //     },
+  //   ],
+  // };
 
-  if (
-    txHash ===
-    '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
-  ) {
-    return new Promise((resolve) => {
-      resolve(fakeTx);
-    });
-  }
+  // if (
+  //   txHash ===
+  //   '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
+  // ) {
+  //   return new Promise((resolve) => {
+  //     resolve(fakeTx);
+  //   });
+  // }
 
   const result = await blockfrostRequest(`/txs/${txHash}/utxos`);
   if (!result || result.error) return null;
