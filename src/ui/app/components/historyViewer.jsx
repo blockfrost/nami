@@ -19,8 +19,6 @@ import initMithrilClient, {
 import provider from '../../../config/provider';
 import { output } from '../../../../webpack.config';
 
-const network = getNetwork();
-
 // const broadcast_channel = new BroadcastChannel('mithril-client');
 // broadcast_channel.onmessage = (e) => {
 //   let event = e.data;
@@ -39,6 +37,8 @@ const network = getNetwork();
 // };
 
 const runMithrilVerification = async (txHashes) => {
+  const network = await getNetwork();
+
   const genesis_verification_key =
     '5b3132372c37332c3132342c3136312c362c3133372c3133312c3231332c3230372c3131372c3139382c38352c3137362c3139392c3136322c3234312c36382c3132332c3131392c3134352c31332c3233322c3234332c34392c3232392c322c3234392c3230352c3230352c33392c3233352c34345d';
 
@@ -120,20 +120,25 @@ const verifyCBORData = async (txHashes, history) => {
 
     console.log(`Verifying ${txHash}...`);
 
-    if (
-      txHash !==
-      '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
-    ) {
-      // TODO: TMP until Blockfrost provides tx CBOR endpoint
-      verifiedTxHashes.push(txHash);
-      continue;
-    }
+    // if (
+    //   txHash !==
+    //   '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
+    // ) {
+    //   // TODO: TMP until Blockfrost provides tx CBOR endpoint
+    //   verifiedTxHashes.push(txHash);
+    //   continue;
+    // }
 
     if (!txData) {
       continue;
     }
     if (!txData.utxos) {
       console.log(`Missing UTXOs for tx ${txHash}`);
+      continue;
+    }
+
+    if (!txCBOR) {
+      console.log(`Missing CBOR for tx ${txHash}`);
       continue;
     }
 
@@ -189,6 +194,7 @@ const verifyCBORData = async (txHashes, history) => {
             .transaction_id()
             .to_hex()} JSON: ${jsonInput.txHash})`
         );
+        // console.log('txData', txData);
         continue;
       }
 
@@ -366,9 +372,7 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
               const cborVerified = verificationData?.cbor.verifiedTxHashes.find(
                 (proofTxHash) => proofTxHash === txHash
               );
-              console.log('verificationData', verificationData);
-              console.log('cborVerified', cborVerified);
-              console.log('mithrilVerified', mithrilVerified);
+
               return (
                 <Transaction
                   onLoad={(txHash, txDetail) => {

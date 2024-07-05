@@ -26,7 +26,7 @@ export default {
         .then((res) => res.cardano[currency]),
     mithril: (network) => {
       // const mithrilBaseURL = new URL('http://localhost:3000');
-      let mithrilBaseURL = base(network);
+      let mithrilBaseURL = base(network).node;
       mithrilBaseURL = mithrilBaseURL + '/mithril';
       return mithrilBaseURL;
     },

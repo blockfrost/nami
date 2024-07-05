@@ -222,25 +222,25 @@ export const getTransactions = async (paginate = 1, count = 10) => {
     `/addresses/${currentAccount.paymentKeyHashBech32}/transactions?page=${paginate}&order=desc&count=${count}`
   );
   if (!result || result.error) return [];
-  // return result.map((tx) => ({
-  //   txHash: tx.tx_hash,
-  //   txIndex: tx.tx_index,
-  //   blockHeight: tx.block_height,
-  // }));
-  return [
-    {
-      txHash:
-        '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd',
-      txIndex: 1,
-      blockHeight: 2152118,
-    },
-  ].concat(
-    result.map((tx) => ({
-      txHash: tx.tx_hash,
-      txIndex: tx.tx_index,
-      blockHeight: tx.block_height,
-    }))
-  );
+  return result.map((tx) => ({
+    txHash: tx.tx_hash,
+    txIndex: tx.tx_index,
+    blockHeight: tx.block_height,
+  }));
+  // return [
+  //   {
+  //     txHash:
+  //       '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd',
+  //     txIndex: 1,
+  //     blockHeight: 2152118,
+  //   },
+  // ].concat(
+  //   result.map((tx) => ({
+  //     txHash: tx.tx_hash,
+  //     txIndex: tx.tx_index,
+  //     blockHeight: tx.block_height,
+  //   }))
+  // );
 };
 
 export const getTxInfo = async (txHash) => {
@@ -400,14 +400,14 @@ export const getTxUTxOs = async (txHash) => {
 };
 
 export const getTxMetadata = async (txHash) => {
-  if (
-    txHash ===
-    '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
-  ) {
-    return new Promise((resolve) => {
-      resolve([]);
-    });
-  }
+  // if (
+  //   txHash ===
+  //   '2b31cb16c501bae87940016bb73bf71513c3021abb0a29e9b04949d4220b92cd'
+  // ) {
+  //   return new Promise((resolve) => {
+  //     resolve([]);
+  //   });
+  // }
 
   const result = await blockfrostRequest(`/txs/${txHash}/metadata`);
   if (!result || result.error) return null;
