@@ -36,7 +36,7 @@ import { output } from '../../../../webpack.config';
 //   }
 // };
 
-const runMithrilVerification = async (txHashes) => {
+const runMithrilVerification = async (txHashes, onStateChange) => {
   const network = await getNetwork();
 
   const genesis_verification_key =
@@ -58,9 +58,11 @@ const runMithrilVerification = async (txHashes) => {
 
   // client.set_additional_headers(myHeaders);
 
+  if (onStateChange) onStateChange('fetchingProof');
   const proof = await client.unstable.get_cardano_transaction_proofs(txHashes);
   console.log('Proof', proof);
 
+  if (onStateChange) onStateChange('validatingCertificateChain');
   let proof_certificate = await client.verify_certificate_chain(
     proof.certificate_hash
   );
@@ -68,17 +70,29 @@ const runMithrilVerification = async (txHashes) => {
     'verify_certificate_chain OK, last_certificate_from_chain:',
     proof_certificate
   );
-  let valid_cardano_transaction_proof =
-    await client.unstable.verify_cardano_transaction_proof_then_compute_message(
-      proof,
-      proof_certificate
-    );
-  console.log(
-    'valid_cardano_transaction_proof:',
-    valid_cardano_transaction_proof
-  );
 
-  return proof;
+  if (onStateChange) onStateChange('verifyingProof');
+  try {
+    let valid_cardano_transaction_proof =
+      await client.unstable.verify_cardano_transaction_proof_then_compute_message(
+        proof,
+        proof_certificate
+      );
+    console.log(
+      'valid_cardano_transaction_proof:',
+      valid_cardano_transaction_proof
+    );
+
+    return proof;
+  } catch (error) {
+    console.error(
+      `Error while running mithril verification for tx ${txHashes}`,
+      error
+    );
+    return null;
+  } finally {
+    if (onStateChange) onStateChange('done');
+  }
 };
 
 export const multiAssetToArray = (multiAsset) => {
@@ -267,6 +281,7 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
   const [loadNext, setLoadNext] = React.useState(false);
   const [isMithrilLoading, setIsMithrilLoading] = React.useState(false);
   const [verificationData, setVerificationData] = React.useState();
+  const [mithrilState, setMithrilState] = React.useState('ready');
 
   const getTxs = async () => {
     if (!history) {
@@ -294,7 +309,10 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
     if (slice.length < page * BATCH) setFinal(true);
 
     setHistorySlice(slice);
-    await runTxVerification(slice);
+    const verificationData = await runTxVerification(slice, (state) =>
+      setMithrilState(state)
+    );
+    setVerificationData(verificationData);
   };
 
   React.useEffect(() => {
@@ -320,16 +338,40 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
     if (historySlice.length >= (page - 1) * BATCH) setLoadNext(false);
   }, [historySlice]);
 
-  const runTxVerification = async (txHashes) => {
-    setIsMithrilLoading(true);
+  const runTxVerification = async (txHashes, onStateChange) => {
+    console.log('runTxVerification');
+    // let oldMithrilData = [];
+    // let oldCborData = [];
+    // if (verificationData) {
+    //   oldMithrilData = verificationData.mithril.transactions_hashes.filter(
+    //     (item) => !txHashes.includes(item)
+    //   );
+    //   oldCborData = verificationData.cbor.verifiedTxHashes.filter(
+    //     (item) => !txHashes.includes(item)
+    //   );
+    // }
+    if (onStateChange) onStateChange('verifyingCBOR');
     // Verify that tx JSON data matches CBOR data
     const cborVerification = await verifyCBORData(txHashes, history);
     // Run mithril verification
-    const proof = await runMithrilVerification(txHashes);
-    console.log('Mithril verified hashes', proof.transactions_hashes);
-    setVerificationData({ mithril: proof, cbor: cborVerification });
-    setIsMithrilLoading(false);
+    const proof = await runMithrilVerification(txHashes, onStateChange);
+    console.log('Mithril verified hashes', proof?.transactions_hashes);
+    // setVerificationData({ mithril: proof, cbor: cborVerification });
+
+    return { mithril: proof, cbor: cborVerification };
+    // setVerificationData({
+    //   mithril: {
+    //     ...proof,
+    //     transactions_hashes: oldMithrilData.concat(proof.transactions_hashes),
+    //   },
+    //   cbor: {
+    //     verifiedTxHashes: oldCborData.concat(cborVerification.verifiedTxHashes),
+    //   },
+    // });
   };
+
+  console.log('verificationData', verificationData);
+  console.log('mithrilState', mithrilState);
 
   return (
     <Box position="relative">
@@ -362,7 +404,7 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
             {historySlice.map((txHash, index) => {
               if (!history.details[txHash]) history.details[txHash] = {};
               const mithrilVerified =
-                verificationData?.mithril.transactions_hashes.find(
+                verificationData?.mithril?.transactions_hashes.find(
                   (proofTxHash) => proofTxHash === txHash
                 );
               const cborVerified = verificationData?.cbor.verifiedTxHashes.find(
@@ -375,7 +417,10 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
                     txObject[txHash] = txDetail;
                   }}
                   mithrilVerified={mithrilVerified && cborVerified}
-                  isMithrilLoading={isMithrilLoading}
+                  isMithrilLoading={mithrilState !== 'done'}
+                  mithrilData={verificationData?.mithril}
+                  mithrilState={mithrilState}
+                  runTxVerification={runTxVerification}
                   key={index}
                   txHash={txHash}
                   detail={history.details[txHash]}

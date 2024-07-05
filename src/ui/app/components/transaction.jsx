@@ -1,5 +1,5 @@
 import { ExternalLinkIcon } from '@chakra-ui/icons';
-import React from 'react';
+import React, { useRef } from 'react';
 import { updateTxInfo } from '../../../api/extension';
 import UnitDisplay from './unitDisplay';
 import {
@@ -47,6 +47,7 @@ import {
 } from 'react-icons/all';
 import { useCaptureEvent } from '../../../features/analytics/hooks';
 import { Events } from '../../../features/analytics/events';
+import MithrilModal from '../../../features/mithril/MithrilModal';
 
 TimeAgo.addDefaultLocale(en);
 
@@ -95,11 +96,16 @@ const Transaction = ({
   addresses,
   network,
   onLoad,
+  runTxVerification,
+  mithrilState,
+  mithrilData,
   mithrilVerified,
   isMithrilLoading,
 }) => {
   const settings = useStoreState((state) => state.settings.settings);
   const isMounted = useIsMounted();
+  const [isMithrilRevalidating, setIsMithrilRevalidating] =
+    React.useState(false);
   const [displayInfo, setDisplayInfo] = React.useState(
     genDisplayInfo(txHash, detail, currentAddr, addresses)
   );
@@ -182,7 +188,7 @@ const Transaction = ({
                   borderRadius: '8px',
                 }}
               >
-                {!isMithrilLoading ? (
+                {!isMithrilLoading && !isMithrilRevalidating ? (
                   <>
                     <Icon
                       as={mithrilVerified ? FaCheckCircle : IoWarning}
@@ -322,7 +328,27 @@ const Transaction = ({
         )}
         <AccordionPanel wordBreak="break-word" pb={4}>
           {displayInfo && (
-            <TxDetail displayInfo={displayInfo} network={network} />
+            <TxDetail
+              displayInfo={displayInfo}
+              network={network}
+              mithril={mithrilData}
+              mithrilState={mithrilState}
+              runTxVerification={async (txHashes, onChangeState) => {
+                setIsMithrilRevalidating(true);
+                try {
+                  const res = await runTxVerification(txHashes, onChangeState);
+                  console.log(`Revalidation for ${txHashes}`, res);
+                  return res;
+                } catch (error) {
+                  console.error(
+                    `Error while running mithril verification for tx ${displayInfo.txHash}`,
+                    error
+                  );
+                } finally {
+                  setIsMithrilRevalidating(false);
+                }
+              }}
+            />
           )}
         </AccordionPanel>
         <Box display="flex" flexDirection="column" alignItems="center">
@@ -391,14 +417,34 @@ const TxIcon = ({ txType, extra }) => {
   );
 };
 
-const TxDetail = ({ displayInfo, network }) => {
+const TxDetail = ({
+  displayInfo,
+  runTxVerification,
+  mithril,
+  mithrilState,
+  network,
+}) => {
   const capture = useCaptureEvent();
+  const [localMithrilState, setLocalMithrilState] = React.useState();
+  const [localVerificationData, setLocalVerificationData] = React.useState();
   const colorMode = {
     extraDetail: useColorModeValue('black', 'white'),
   };
 
+  const mithrilModalRef = useRef();
+  const activeMithrilState = localMithrilState ?? mithrilState;
+  const activeMithrilData = localVerificationData ?? mithril;
+
+  console.log('activeMithrilData', activeMithrilData);
+  console.log(
+    'activeMithrilData?.latest_block_number',
+    activeMithrilData?.latest_block_number,
+    typeof activeMithrilData?.latest_block_number
+  );
+  console.log('mithrilModalRef', mithrilModalRef.current);
   return (
     <>
+      <MithrilModal ref={mithrilModalRef} tx={displayInfo.txHash} />
       <Box display="flex" flexDirection="horizontal">
         <Box>
           <Box
@@ -464,6 +510,103 @@ const TxDetail = ({ displayInfo, network }) => {
             minWidth="75px"
           >
             {displayInfo.timestamp}
+          </Box>
+        </Box>
+      </Box>
+      <Box display="flex" flexDirection="horizontal" my="8px">
+        <Box>
+          <Box
+            display="flex"
+            flexDirection="vertical"
+            color="gray.600"
+            fontSize="sm"
+            fontWeight="bold"
+          >
+            Mithril
+          </Box>
+          <Box style={{ display: 'flex', flexDirection: 'column' }}>
+            {activeMithrilState !== 'done' && (
+              <>{activeMithrilState ?? 'Verifying'}...</>
+            )}
+            {activeMithrilData && activeMithrilState === 'done' && (
+              <>
+                <Box>Certificate: {activeMithrilData.certificate_hash}</Box>
+                <Box>
+                  Block: {activeMithrilData.latest_block_number.toString()}
+                </Box>
+              </>
+            )}
+            <Box>
+              {/* <Button
+                colorScheme="blue"
+                size="sm"
+                fontSize="12px"
+                p="4px 6px"
+                height="revert"
+                mr="8px"
+                onClick={() => {
+                  mithrilModalRef.current.openModal();
+                }}
+              >
+                Modal
+              </Button> */}
+              <Button
+                colorScheme="blue"
+                size="sm"
+                fontSize="12px"
+                p="4px 6px"
+                height="revert"
+                mr="8px"
+                onClick={async () => {
+                  const verificationData = await runTxVerification(
+                    [displayInfo.txHash],
+                    (state) => {
+                      setLocalMithrilState(state);
+                    }
+                  );
+                  if (verificationData) {
+                    setLocalVerificationData(verificationData.mithril);
+                  }
+                }}
+              >
+                Revalidate
+              </Button>
+
+              <Link
+                color="teal"
+                href="https://mithril.network/explorer/?aggregator=https%3A%2F%2Faggregator.testing-preview.api.mithril.network%2Faggregator"
+                isExternal
+                // onClick={() => {
+                //   capture(Events.ActivityActivityDetailTransactionHashClick);
+                // }}
+              >
+                <Button
+                  display="inline-block"
+                  colorScheme="orange"
+                  size="sm"
+                  fontSize="12px"
+                  p="4px 6px"
+                  height="revert"
+                  my="8px"
+                >
+                  Mithril Explorer
+                </Button>
+              </Link>
+            </Box>
+          </Box>
+        </Box>
+        <Box>
+          <Box
+            display="flex"
+            flexDirection="vertical"
+            textAlign="right"
+            pl="10px"
+            color="gray.500"
+            fontSize="xs"
+            fontWeight="400"
+            minWidth="75px"
+          >
+            {/* second col */}
           </Box>
         </Box>
       </Box>
