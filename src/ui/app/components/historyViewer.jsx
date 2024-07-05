@@ -187,24 +187,16 @@ const verifyCBORData = async (txHashes, history) => {
     // Compare tx inputs
     for (let i = 0; i < inputs.length; i++) {
       const cborInput = txBody.inputs().get(i);
-      const jsonInput = inputs[i];
-      if (cborInput.transaction_id().to_hex() !== jsonInput.tx_hash) {
+      const cborInputTxHash = cborInput.transaction_id().to_hex();
+      const cborInputIndex = cborInput.index().to_str();
+      const jsonInput = inputs.find(
+        (input) =>
+          input.tx_hash === cborInputTxHash &&
+          input.output_index.toString() === cborInputIndex
+      );
+      if (!jsonInput) {
         console.log(
-          `Tx input ${jsonInput.txHash} mismatch (CBOR: ${cborInput
-            .transaction_id()
-            .to_hex()} JSON: ${jsonInput.txHash})`
-        );
-        // console.log('txData', txData);
-        continue;
-      }
-
-      if (cborInput.index().to_str() !== jsonInput.output_index.toString()) {
-        console.log(
-          `Tx input ${
-            jsonInput.txHash
-          } index mismatch (CBOR: ${cborInput.index()} JSON: ${
-            jsonInput.output_index
-          })`
+          `Tx input index ${i} mismatch (CBOR input tx hash: ${cborInputTxHash} JSON: n/a`
         );
         continue;
       }
@@ -213,13 +205,16 @@ const verifyCBORData = async (txHashes, history) => {
     // Compare tx outputs
     for (let i = 0; i < outputs.length; i++) {
       const cborOutput = txBody.outputs().get(i);
+      const cborOutputAmount = cborOutput.amount().coin().to_str();
+      const cborOutputAddress = cborOutput.address().to_bech32();
+
       const jsonOutput = outputs[i];
 
       // lovelace amount
       const jsonLovelaceAMount = jsonOutput.amount.find(
         (a) => a.unit === 'lovelace'
       )?.quantity;
-      if (cborOutput.amount().coin().to_str() !== jsonLovelaceAMount) {
+      if (cborOutputAmount !== jsonLovelaceAMount) {
         console.log(
           `amounts do not match. CBOR: ${cborOutput
             .amount()
@@ -229,7 +224,7 @@ const verifyCBORData = async (txHashes, history) => {
         continue;
       }
       // address
-      if (cborOutput.address().to_bech32() !== jsonOutput.address) {
+      if (cborOutputAddress !== jsonOutput.address) {
         console.log(`addresses do not match`);
         continue;
       }
@@ -331,6 +326,7 @@ const HistoryViewer = ({ history, network, currentAddr, addresses }) => {
     const cborVerification = await verifyCBORData(txHashes, history);
     // Run mithril verification
     const proof = await runMithrilVerification(txHashes);
+    console.log('Mithril verified hashes', proof.transactions_hashes);
     setVerificationData({ mithril: proof, cbor: cborVerification });
     setIsMithrilLoading(false);
   };
