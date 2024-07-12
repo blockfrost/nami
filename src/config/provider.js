@@ -9,10 +9,11 @@ const networkToProjectId = {
   preview: secrets.PROJECT_ID_PREVIEW,
 };
 
+const base = (node = NODE.mainnet) => node;
 export default {
   api: {
     ipfs: 'https://ipfs.blockfrost.dev/ipfs',
-    base: (node = NODE.mainnet) => node,
+    base,
     header: { [secrets.NAMI_HEADER || 'dummy']: version },
     key: (network = 'mainnet') => ({
       project_id: networkToProjectId[network],
@@ -23,5 +24,11 @@ export default {
       )
         .then((res) => res.json())
         .then((res) => res.cardano[currency]),
+    mithril: (network) => {
+      // const mithrilBaseURL = new URL('http://localhost:3000');
+      let mithrilBaseURL = base(network).node;
+      mithrilBaseURL = mithrilBaseURL + '/mithril';
+      return mithrilBaseURL;
+    },
   },
 };

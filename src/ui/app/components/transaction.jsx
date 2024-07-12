@@ -1,5 +1,5 @@
 import { ExternalLinkIcon } from '@chakra-ui/icons';
-import React from 'react';
+import React, { useRef } from 'react';
 import { updateTxInfo } from '../../../api/extension';
 import UnitDisplay from './unitDisplay';
 import {
@@ -14,6 +14,8 @@ import {
   Icon,
   useColorModeValue,
   Skeleton,
+  Spinner,
+  Tooltip,
 } from '@chakra-ui/react';
 import { compileOutputs } from '../../../api/util';
 import TimeAgo from 'javascript-time-ago';
@@ -28,6 +30,7 @@ import { NETWORK_ID } from '../../../config/config';
 import { useStoreState } from 'easy-peasy';
 import {
   FaCoins,
+  FaCheckCircle,
   FaPiggyBank,
   FaTrashAlt,
   FaRegEdit,
@@ -35,6 +38,7 @@ import {
   FaUsers,
   FaRegFileCode,
   IoRemoveCircleSharp,
+  IoWarning,
   TiArrowForward,
   TiArrowBack,
   TiArrowShuffle,
@@ -43,6 +47,7 @@ import {
 } from 'react-icons/all';
 import { useCaptureEvent } from '../../../features/analytics/hooks';
 import { Events } from '../../../features/analytics/events';
+import MithrilModal from '../../../features/mithril/MithrilModal';
 
 TimeAgo.addDefaultLocale(en);
 
@@ -91,9 +96,16 @@ const Transaction = ({
   addresses,
   network,
   onLoad,
+  runTxVerification,
+  mithrilState,
+  mithrilData,
+  mithrilVerified,
+  isMithrilLoading,
 }) => {
   const settings = useStoreState((state) => state.settings.settings);
   const isMounted = useIsMounted();
+  const [isMithrilRevalidating, setIsMithrilRevalidating] =
+    React.useState(false);
   const [displayInfo, setDisplayInfo] = React.useState(
     genDisplayInfo(txHash, detail, currentAddr, addresses)
   );
@@ -142,6 +154,7 @@ const Transaction = ({
             borderRadius={10}
             borderLeftRadius={30}
             p={0}
+            position={'relative'}
             _hover={{ backgroundColor: colorMode.txBgHover }}
             _focus={{ border: 'none' }}
           >
@@ -155,6 +168,84 @@ const Transaction = ({
               left="-15px"
             >
               <TxIcon txType={displayInfo.type} extra={displayInfo.extra} />
+            </Box>
+            <Box
+              display="flex"
+              flexDirection="column"
+              textAlign="center"
+              position="absolute"
+              zIndex={100}
+              right="20px"
+              top="24px"
+            >
+              <div
+                className="verification-badge"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '4px 6px',
+                  background: '#ffffff',
+                  borderRadius: '8px',
+                }}
+              >
+                {!isMithrilLoading && !isMithrilRevalidating ? (
+                  <>
+                    <Icon
+                      as={mithrilVerified ? FaCheckCircle : IoWarning}
+                      w={4}
+                      h={4}
+                      color={mithrilVerified ? 'green.500' : 'red.500'}
+                      marginRight={1}
+                    />
+                    {mithrilVerified ? (
+                      <Text
+                        fontSize={10}
+                        fontWeight="semibold"
+                        color="green.500"
+                      >
+                        Verified
+                      </Text>
+                    ) : (
+                      <Tooltip
+                        label={
+                          <Box display="flex" flexDirection="column">
+                            <Text ml="1">
+                              This transaction could not be verified on the
+                              blockchain. It may be fraudulent, and the data
+                              source could be compromised. For your safety,
+                              please review this transaction carefully.
+                            </Text>
+                          </Box>
+                        }
+                        fontSize="sm"
+                        hasArrow
+                        placement="auto"
+                      >
+                        <Text
+                          fontSize={10}
+                          fontWeight="semibold"
+                          color="red.500"
+                        >
+                          Untrusted
+                        </Text>
+                      </Tooltip>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Spinner
+                      color="teal"
+                      speed="0.5s"
+                      boxSize="12px"
+                      size="xs"
+                      marginRight={1}
+                    />
+                    <Text fontSize={10} fontWeight="semibold" color="green.500">
+                      Verifying
+                    </Text>
+                  </>
+                )}
+              </div>
             </Box>
             <Box
               display="flex"
@@ -237,7 +328,27 @@ const Transaction = ({
         )}
         <AccordionPanel wordBreak="break-word" pb={4}>
           {displayInfo && (
-            <TxDetail displayInfo={displayInfo} network={network} />
+            <TxDetail
+              displayInfo={displayInfo}
+              network={network}
+              mithril={mithrilData}
+              mithrilState={mithrilState}
+              runTxVerification={async (txHashes, onChangeState) => {
+                setIsMithrilRevalidating(true);
+                try {
+                  const res = await runTxVerification(txHashes, onChangeState);
+                  console.log(`Revalidation for ${txHashes}`, res);
+                  return res;
+                } catch (error) {
+                  console.error(
+                    `Error while running mithril verification for tx ${displayInfo.txHash}`,
+                    error
+                  );
+                } finally {
+                  setIsMithrilRevalidating(false);
+                }
+              }}
+            />
           )}
         </AccordionPanel>
         <Box display="flex" flexDirection="column" alignItems="center">
@@ -306,14 +417,34 @@ const TxIcon = ({ txType, extra }) => {
   );
 };
 
-const TxDetail = ({ displayInfo, network }) => {
+const TxDetail = ({
+  displayInfo,
+  runTxVerification,
+  mithril,
+  mithrilState,
+  network,
+}) => {
   const capture = useCaptureEvent();
+  const [localMithrilState, setLocalMithrilState] = React.useState();
+  const [localVerificationData, setLocalVerificationData] = React.useState();
   const colorMode = {
     extraDetail: useColorModeValue('black', 'white'),
   };
 
+  const mithrilModalRef = useRef();
+  const activeMithrilState = localMithrilState ?? mithrilState;
+  const activeMithrilData = localVerificationData ?? mithril;
+
+  console.log('activeMithrilData', activeMithrilData);
+  console.log(
+    'activeMithrilData?.latest_block_number',
+    activeMithrilData?.latest_block_number,
+    typeof activeMithrilData?.latest_block_number
+  );
+  console.log('mithrilModalRef', mithrilModalRef.current);
   return (
     <>
+      <MithrilModal ref={mithrilModalRef} tx={displayInfo.txHash} />
       <Box display="flex" flexDirection="horizontal">
         <Box>
           <Box
@@ -379,6 +510,103 @@ const TxDetail = ({ displayInfo, network }) => {
             minWidth="75px"
           >
             {displayInfo.timestamp}
+          </Box>
+        </Box>
+      </Box>
+      <Box display="flex" flexDirection="horizontal" my="8px">
+        <Box>
+          <Box
+            display="flex"
+            flexDirection="vertical"
+            color="gray.600"
+            fontSize="sm"
+            fontWeight="bold"
+          >
+            Mithril
+          </Box>
+          <Box style={{ display: 'flex', flexDirection: 'column' }}>
+            {activeMithrilState !== 'done' && (
+              <>{activeMithrilState ?? 'Verifying'}...</>
+            )}
+            {activeMithrilData && activeMithrilState === 'done' && (
+              <>
+                <Box>Certificate: {activeMithrilData.certificate_hash}</Box>
+                <Box>
+                  Block: {activeMithrilData.latest_block_number.toString()}
+                </Box>
+              </>
+            )}
+            <Box>
+              {/* <Button
+                colorScheme="blue"
+                size="sm"
+                fontSize="12px"
+                p="4px 6px"
+                height="revert"
+                mr="8px"
+                onClick={() => {
+                  mithrilModalRef.current.openModal();
+                }}
+              >
+                Modal
+              </Button> */}
+              <Button
+                colorScheme="blue"
+                size="sm"
+                fontSize="12px"
+                p="4px 6px"
+                height="revert"
+                mr="8px"
+                onClick={async () => {
+                  const verificationData = await runTxVerification(
+                    [displayInfo.txHash],
+                    (state) => {
+                      setLocalMithrilState(state);
+                    }
+                  );
+                  if (verificationData) {
+                    setLocalVerificationData(verificationData.mithril);
+                  }
+                }}
+              >
+                Revalidate
+              </Button>
+
+              <Link
+                color="teal"
+                href="https://mithril.network/explorer/?aggregator=https%3A%2F%2Faggregator.testing-preview.api.mithril.network%2Faggregator"
+                isExternal
+                // onClick={() => {
+                //   capture(Events.ActivityActivityDetailTransactionHashClick);
+                // }}
+              >
+                <Button
+                  display="inline-block"
+                  colorScheme="orange"
+                  size="sm"
+                  fontSize="12px"
+                  p="4px 6px"
+                  height="revert"
+                  my="8px"
+                >
+                  Mithril Explorer
+                </Button>
+              </Link>
+            </Box>
+          </Box>
+        </Box>
+        <Box>
+          <Box
+            display="flex"
+            flexDirection="vertical"
+            textAlign="right"
+            pl="10px"
+            color="gray.500"
+            fontSize="xs"
+            fontWeight="400"
+            minWidth="75px"
+          >
+            {/* second col */}
           </Box>
         </Box>
       </Box>

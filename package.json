@@ -27,6 +27,7 @@
     "@fontsource/ubuntu": "^5.0.8",
     "@ledgerhq/hw-transport-webusb": "^6.28.0",
     "@trezor/connect-web": "^9.0.11",
+    "@mithril-dev/mithril-client-wasm": "^0.3.3",
     "bip39": "^3.0.4",
     "crc": "^4.1.1",
     "crypto-random-string": "^5.0.0",
